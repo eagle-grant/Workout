@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b0f19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>30·Min</title>
+<style>
+  :root{
+    --bg:#0b0f19; --card:#151b2b; --card2:#1c2438; --line:#26304a;
+    --text:#eef2fb; --muted:#8b95ad; --accent:#4f8cff; --accent2:#37d6a3;
+    --warn:#ffb454; --danger:#ff5d6c; --radius:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overscroll-behavior:none;
+  }
+  #app{max-width:560px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+  .screen{flex:1; padding:22px 18px 40px; animation:fade .28s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  header.top{display:flex; align-items:center; gap:12px; padding:16px 18px 6px;}
+  .back{
+    background:var(--card); border:1px solid var(--line); color:var(--text);
+    width:42px; height:42px; border-radius:12px; font-size:20px; display:flex;
+    align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .back:active{transform:scale(.94);}
+  .crumb{font-size:13px; color:var(--muted); letter-spacing:.3px;}
+  .crumb b{color:var(--text);}
+
+  h1{font-size:30px; line-height:1.15; margin:6px 0 4px; letter-spacing:-.5px;}
+  h2{font-size:22px; margin:2px 0 4px; letter-spacing:-.3px;}
+  .sub{color:var(--muted); font-size:15px; margin:0 0 26px;}
+
+  .q{font-size:26px; font-weight:700; margin:40px 0 8px; letter-spacing:-.4px;}
+  .q-sub{color:var(--muted); font-size:15px; margin-bottom:30px;}
+
+  .choices{display:flex; flex-direction:column; gap:14px;}
+  .choice{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 20px; text-align:left; color:var(--text); cursor:pointer;
+    display:flex; align-items:center; gap:16px; transition:transform .12s, border-color .2s;
+  }
+  .choice:active{transform:scale(.98);}
+  .choice .ic{font-size:30px; width:40px; text-align:center;}
+  .choice .lbl{font-size:19px; font-weight:600;}
+  .choice .d{font-size:13px; color:var(--muted); margin-top:3px;}
+  .choice.yes{border-color:rgba(55,214,163,.5);}
+  .choice.no{border-color:var(--line);}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px;}
+  .tile{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px 16px; cursor:pointer; text-align:center; color:var(--text);
+    transition:transform .12s, border-color .2s; position:relative; overflow:hidden;
+  }
+  .tile:active{transform:scale(.96);}
+  .tile .emoji{font-size:38px; display:block; margin-bottom:10px;}
+  .tile .name{font-size:18px; font-weight:700;}
+  .tile.abs{grid-column:1 / -1;}
+  .tile::after{content:""; position:absolute; inset:0; border-radius:var(--radius);
+    background:linear-gradient(135deg,rgba(79,140,255,.10),transparent 60%); pointer-events:none;}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card2);
+    border:1px solid var(--line); color:var(--muted); font-size:12px; font-weight:600;
+    padding:6px 11px; border-radius:999px; margin-bottom:14px;
+  }
+  .pill .dot{width:7px; height:7px; border-radius:50%; background:var(--accent2);}
+
+  .block-title{font-size:13px; text-transform:uppercase; letter-spacing:1.2px;
+    color:var(--accent2); margin:26px 0 12px; font-weight:700;}
+  .block-title.main{color:var(--accent);}
+  .block-title.finish{color:var(--warn);}
+
+  .ex{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 16px 15px; margin-bottom:12px;
+  }
+  .ex-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .ex-name{font-size:17px; font-weight:700;}
+  .ex-num{font-size:12px; color:var(--muted); font-weight:700; flex-shrink:0;}
+  .ex-meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .tag{font-size:12.5px; font-weight:600; padding:5px 10px; border-radius:9px;
+    background:var(--card2); border:1px solid var(--line);}
+  .tag.s{color:var(--accent);} .tag.r{color:var(--accent2);} .tag.rest{color:var(--muted);}
+  .ex-note{font-size:13px; color:var(--muted); margin-top:10px; line-height:1.45;}
+
+  .rest-btn{margin-top:12px; width:100%; background:var(--card2); border:1px dashed var(--line);
+    color:var(--muted); padding:10px; border-radius:11px; font-size:13px; font-weight:600; cursor:pointer;}
+  .rest-btn:active{transform:scale(.99);}
+
+  /* Timer overlay */
+  #timer{position:fixed; inset:0; background:rgba(8,11,20,.94); backdrop-filter:blur(6px);
+    display:none; flex-direction:column; align-items:center; justify-content:center; z-index:50;}
+  #timer.show{display:flex; animation:fade .2s;}
+  .ring{position:relative; width:230px; height:230px;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .val{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:62px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .t-label{color:var(--muted); margin:22px 0 26px; font-size:15px; letter-spacing:.5px;}
+  .t-btns{display:flex; gap:14px;}
+  .t-btns button{background:var(--card); border:1px solid var(--line); color:var(--text);
+    padding:14px 22px; border-radius:14px; font-size:16px; font-weight:600; cursor:pointer;}
+  .t-btns .go{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .t-adj{display:flex; gap:10px; margin-bottom:20px;}
+  .t-adj button{background:var(--card); border:1px solid var(--line); color:var(--muted);
+    width:54px; height:44px; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer;}
+
+  footer{padding:22px 18px 30px; text-align:center; color:var(--muted); font-size:12px;}
+  .hint{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; font-size:13.5px; color:var(--muted); line-height:1.5; margin-top:22px;}
+
+  /* how-to step cards */
+  .steps{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:14px;}
+  .step{background:var(--card2); border:1px solid var(--line); border-radius:12px;
+    padding:10px 6px 10px; text-align:center; position:relative;}
+  .step .n{position:absolute; top:7px; left:7px; width:19px; height:19px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;}
+  .step svg{width:100%; height:84px; display:block;}
+  .step .cap{font-size:11px; color:var(--muted); line-height:1.35; margin-top:5px;}
+  .fig{stroke:var(--accent2); stroke-width:4; fill:none; stroke-linecap:round; stroke-linejoin:round;}
+  .head{fill:var(--accent2); stroke:none;}
+  .ground{stroke:var(--line); stroke-width:3; stroke-linecap:round;}
+  .bench{stroke:var(--muted); stroke-width:5; stroke-linecap:round;}
+  .arrow{stroke:var(--accent); stroke-width:3; fill:none; stroke-linecap:round;}
+  .arrowhead{fill:var(--accent);}
+  .weight{fill:var(--accent); stroke:none;}
+  .barbar{stroke:var(--accent); stroke-width:3; stroke-linecap:round;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top" id="topbar" style="visibility:hidden">
+    <button class="back" id="backBtn">‹</button>
+    <div class="crumb" id="crumb"></div>
+  </header>
+  <div class="screen" id="screen"></div>
+  <footer>Tap “Rest” under any exercise to start a timer · Add to Home Screen for app mode</footer>
+</div>
+
+<!-- Rest timer overlay -->
+<div id="timer">
+  <div class="ring">
+    <svg width="230" height="230" viewBox="0 0 230 230">
+      <circle cx="115" cy="115" r="104" stroke="#26304a" stroke-width="14" fill="none"/>
+      <circle id="ringFill" cx="115" cy="115" r="104" stroke="#37d6a3" stroke-width="14" fill="none"
+        stroke-linecap="round" stroke-dasharray="653.5" stroke-dashoffset="0"/>
+    </svg>
+    <div class="val" id="tVal">60</div>
+  </div>
+  <div class="t-label">REST</div>
+  <div class="t-adj">
+    <button onclick="adjust(-15)">−15</button>
+    <button onclick="adjust(15)">+15</button>
+    <button onclick="adjust(30)">+30</button>
+  </div>
+  <div class="t-btns">
+    <button id="pauseBtn" onclick="togglePause()">Pause</button>
+    <button class="go" onclick="closeTimer()">Done</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- WORKOUT DATA ----------------
+   equip: gym | db | bw
+   Each entry -> { warmup:[...], main:[{name,sets,reps,rest,note}], finish:{...} }
+------------------------------------------------- */
+const MG = {
+  chest:{name:"Chest", emoji:"💪"},
+  back:{name:"Back", emoji:"🔙"},
+  legs:{name:"Legs", emoji:"🦵"},
+  shoulders:{name:"Shoulders", emoji:"🏋️"},
+  biceps:{name:"Biceps", emoji:"💥"},
+  triceps:{name:"Triceps", emoji:"🔨"},
+  abs:{name:"Abs", emoji:"🎯"},
+};
+
+const EQUIP_LABEL = {gym:"Full gym", db:"Dumbbells + bodyweight", bw:"Bodyweight only"};
+
+function ex(name,sets,reps,rest,note){return {name,sets,reps,rest,note:note||""};}
+
+const WORKOUTS = {
+  chest:{
+    gym:{warmup:["2 min light cardio (treadmill/rower)","Arm swings + band pull-aparts ×20","1 light warm-up set on bench"],
+      main:[
+        ex("Barbell Bench Press",4,"8–10","90s","Control the descent, drive through your chest."),
+        ex("Incline Dumbbell Press",3,"10–12","75s","Targets upper chest. 30–45° bench angle."),
+        ex("Cable Fly (mid)",3,"12–15","60s","Squeeze at the center, slight bend in elbows."),
+        ex("Chest Dips",3,"8–12","60s","Lean forward to bias the chest over triceps."),
+      ], finish:ex("Push-up Burnout",1,"To failure","—","Empty the tank to end the session.")},
+    db:{warmup:["2 min light cardio or jumping jacks","Arm circles + shoulder rolls ×20","1 light set of floor presses"],
+      main:[
+        ex("Dumbbell Bench/Floor Press",4,"10–12","75s","Full range, dumbbells travel in a slight arc."),
+        ex("Incline Dumbbell Press",3,"10–12","75s","Prop feet up / use pillows if no bench."),
+        ex("Dumbbell Fly",3,"12–15","60s","Deep stretch, controlled — light weight is fine."),
+        ex("Close-Grip Push-ups",3,"12–15","45s","Hands under chest, elbows tucked."),
+      ], finish:ex("Wide Push-up Burnout",1,"To failure","—","Wide hands to finish the chest off.")},
+    bw:{warmup:["Jumping jacks 60s","Arm circles + shoulder rolls ×20","Scapular push-ups ×10"],
+      main:[
+        ex("Standard Push-ups",4,"12–20","60s","Body in a straight line, chest to floor."),
+        ex("Decline Push-ups (feet elevated)",3,"10–15","60s","Feet on couch/chair to load upper chest."),
+        ex("Wide Push-ups",3,"12–15","45s","Hands wider than shoulders for chest stretch."),
+        ex("Diamond Push-ups",3,"8–12","45s","Hands together — hits inner chest & triceps."),
+      ], finish:ex("Push-up AMRAP",1,"90s max reps","—","As many quality reps as possible in 90 seconds.")},
+  },
+  back:{
+    gym:{warmup:["2 min rower or light cardio","Band pull-aparts ×20","1 light lat pulldown set"],
+      main:[
+        ex("Lat Pulldown",4,"10–12","75s","Pull to upper chest, squeeze shoulder blades."),
+        ex("Barbell Row",4,"8–10","90s","Hinge ~45°, pull to lower ribs, flat back."),
+        ex("Seated Cable Row",3,"10–12","75s","Chest tall, drive elbows straight back."),
+        ex("Face Pull",3,"15","45s","Rear delts + upper back, pull to your face."),
+      ], finish:ex("Straight-Arm Pulldown",2,"15","45s","Feel the lats stretch and contract.")},
+    db:{warmup:["2 min light cardio","Band/towel pull-aparts ×20","Cat-cow ×10"],
+      main:[
+        ex("One-Arm Dumbbell Row",4,"10–12 /side","75s","Support on a bench/chair, pull to hip."),
+        ex("Dumbbell Romanian Deadlift",3,"10–12","75s","Hinge at hips, back flat, feel hamstrings/back."),
+        ex("Dumbbell Pullover",3,"12","60s","Lying down, stretch over head, pull to chest."),
+        ex("Reverse Fly",3,"15","45s","Bent over, raise dumbbells out — rear delts/upper back."),
+      ], finish:ex("Renegade Row",2,"10 /side","45s","Plank position, row one dumbbell at a time.")},
+    bw:{warmup:["Jumping jacks 60s","Arm swings ×20","Cat-cow + bird dog ×10"],
+      main:[
+        ex("Pull-ups or Doorway Rows",4,"6–12","75s","Use a bar if available; else row on a sturdy table edge."),
+        ex("Superman Hold",3,"20–30s","45s","Lift chest, arms & legs — squeeze lower back/glutes."),
+        ex("Towel/Table Inverted Row",3,"10–15","60s","Lie under a table, pull chest toward the edge."),
+        ex("Reverse Snow Angels",3,"15","45s","Face down, sweep arms from hips to overhead."),
+      ], finish:ex("Bird Dog",2,"10 /side","30s","Slow & controlled — opposite arm/leg extension.")},
+  },
+  legs:{
+    gym:{warmup:["3 min bike/treadmill","Leg swings ×15 /side","Bodyweight squats ×15","1 light squat set"],
+      main:[
+        ex("Barbell Back Squat",4,"8–10","2 min","Depth to parallel, drive through mid-foot."),
+        ex("Romanian Deadlift",3,"10","90s","Hinge, slight knee bend, stretch the hamstrings."),
+        ex("Leg Press",3,"12","75s","Full range, don't lock knees hard at top."),
+        ex("Seated/Lying Leg Curl",3,"12–15","60s","Squeeze hamstrings, controlled negative."),
+      ], finish:ex("Standing Calf Raise",3,"15–20","30s","Full stretch at bottom, pause at top.")},
+    db:{warmup:["2 min light cardio","Leg swings ×15 /side","Bodyweight squats ×15"],
+      main:[
+        ex("Goblet Squat",4,"12–15","75s","Hold one dumbbell at chest, sit between the heels."),
+        ex("Dumbbell Romanian Deadlift",3,"12","75s","Dumbbells slide down thighs, hinge at hips."),
+        ex("Dumbbell Reverse Lunge",3,"10 /side","60s","Step back, knee to floor, drive up."),
+        ex("Dumbbell Step-up",3,"10 /side","60s","Onto a bench/sturdy chair, full extension."),
+      ], finish:ex("Dumbbell Calf Raise",3,"20","30s","Hold dumbbells, slow full-range reps.")},
+    bw:{warmup:["Jumping jacks 60s","Leg swings ×15 /side","Hip circles ×10"],
+      main:[
+        ex("Bodyweight Squats",4,"20–25","60s","Chest up, sit back, full depth."),
+        ex("Bulgarian Split Squat",3,"12 /side","60s","Rear foot on chair — this one burns."),
+        ex("Reverse Lunges",3,"12 /side","60s","Controlled, knee lightly taps the floor."),
+        ex("Glute Bridge",3,"20","45s","Squeeze glutes hard at the top, pause 1s."),
+      ], finish:ex("Wall Sit + Calf Raises",1,"45s hold + 20 raises","—","Sit at wall, then finish with calf raises.")},
+  },
+  shoulders:{
+    gym:{warmup:["2 min light cardio","Band pull-aparts ×20","Arm circles ×20","1 light press set"],
+      main:[
+        ex("Overhead Barbell Press",4,"8–10","90s","Brace core, press overhead, don't flare ribs."),
+        ex("Dumbbell Lateral Raise",4,"12–15","45s","Lead with elbows, control down — no swinging."),
+        ex("Arnold Press",3,"10–12","75s","Rotate palms as you press for full delt hit."),
+        ex("Cable/Rear Delt Fly",3,"15","45s","Rear delts — pull wide and back."),
+      ], finish:ex("Lateral Raise Drop Set",1,"To failure","—","Go lighter and rep out to finish.")},
+    db:{warmup:["2 min light cardio","Arm circles ×20","Band/towel pull-aparts ×20"],
+      main:[
+        ex("Dumbbell Shoulder Press",4,"10–12","75s","Seated or standing, press to nearly locked out."),
+        ex("Dumbbell Lateral Raise",4,"12–15","45s","Slight forward lean, lead with the elbows."),
+        ex("Front Raise",3,"12","45s","Raise to eye level, control the lowering."),
+        ex("Bent-Over Rear Delt Fly",3,"15","45s","Hinge forward, raise dumbbells out to sides."),
+      ], finish:ex("Arnold Press",2,"12","45s","Rotate palms through the press to finish.")},
+    bw:{warmup:["Jumping jacks 60s","Arm circles ×20","Scapular push-ups ×10"],
+      main:[
+        ex("Pike Push-ups",4,"8–12","60s","Hips high, head toward floor — targets delts."),
+        ex("Wall Walks",3,"3–5","60s","Walk feet up a wall toward a handstand."),
+        ex("Lateral Raises (water bottles/bags)",3,"15","45s","Any light load — cans, bottles, backpack."),
+        ex("Plank Shoulder Taps",3,"20 taps","45s","Stay stable, minimal hip sway."),
+      ], finish:ex("Pike Push-up Burnout",1,"To failure","—","Rep out pike push-ups to finish.")},
+  },
+  biceps:{
+    gym:{warmup:["1 min light cardio","Arm swings ×20","1 light curl set"],
+      main:[
+        ex("Barbell Curl",4,"10–12","60s","Elbows pinned to sides, no swinging."),
+        ex("Incline Dumbbell Curl",3,"10–12","60s","Lie back on incline — big biceps stretch."),
+        ex("Hammer Curl",3,"12","45s","Neutral grip — hits brachialis & forearms."),
+        ex("Cable Curl",3,"15","45s","Constant tension, squeeze at the top."),
+      ], finish:ex("21s (Barbell)",1,"21 reps","—","7 bottom-half + 7 top-half + 7 full.")},
+    db:{warmup:["1 min light cardio","Arm swings ×20","1 light curl set"],
+      main:[
+        ex("Dumbbell Curl",4,"10–12","60s","Alternate or together, full range."),
+        ex("Hammer Curl",3,"12","45s","Neutral grip, control the negative."),
+        ex("Incline Dumbbell Curl",3,"10–12","60s","Recline for a deeper stretch."),
+        ex("Concentration Curl",3,"12 /side","45s","Elbow on inner thigh, strict squeeze."),
+      ], finish:ex("Dumbbell 21s",1,"21 reps","—","7 bottom + 7 top + 7 full range.")},
+    bw:{warmup:["Jumping jacks 60s","Arm swings ×20","Scapular pulls ×10"],
+      main:[
+        ex("Chin-ups",4,"5–10","75s","Underhand grip; use bands/feet assist if needed."),
+        ex("Towel Curls (backpack)",3,"12–15","60s","Loop a towel through a bag, curl the load."),
+        ex("Isometric Towel Curl",3,"20s /arm","45s","Pull up with one arm, resist with the other."),
+        ex("Doorframe Curls",3,"12","45s","Grip a doorframe edge and curl your bodyweight."),
+      ], finish:ex("Chin-up Hold",1,"Max hold","—","Chin over bar, hold as long as you can.")},
+  },
+  triceps:{
+    gym:{warmup:["1 min light cardio","Arm swings ×20","1 light pushdown set"],
+      main:[
+        ex("Close-Grip Bench Press",4,"10–12","75s","Hands shoulder-width, elbows tucked."),
+        ex("Cable Pushdown",3,"12–15","45s","Elbows pinned, full lockout each rep."),
+        ex("Overhead Cable/DB Extension",3,"12","60s","Deep stretch behind the head."),
+        ex("Triceps Dips",3,"8–12","60s","Stay upright to bias the triceps."),
+      ], finish:ex("Pushdown Drop Set",1,"To failure","—","Drop the weight and rep out.")},
+    db:{warmup:["1 min light cardio","Arm swings ×20","1 light extension set"],
+      main:[
+        ex("Close-Grip Dumbbell Press",4,"12","75s","Dumbbells together, press over chest."),
+        ex("Overhead Dumbbell Extension",3,"12","60s","Both hands on one dumbbell, lower behind head."),
+        ex("Dumbbell Skullcrusher",3,"12","60s","Lying down, lower to forehead, elbows fixed."),
+        ex("Dumbbell Kickback",3,"15 /side","45s","Hinge over, extend arm fully back."),
+      ], finish:ex("Diamond Push-up Burnout",1,"To failure","—","Hands together, elbows tucked.")},
+    bw:{warmup:["Jumping jacks 60s","Arm swings ×20","Scapular push-ups ×10"],
+      main:[
+        ex("Bench/Chair Dips",4,"12–15","60s","Hands on chair behind you, dip to 90°."),
+        ex("Diamond Push-ups",4,"10–15","60s","Hands together under chest, elbows tucked."),
+        ex("Close-Grip Push-ups",3,"12–15","45s","Elbows brush your sides on the way down."),
+        ex("Bodyweight Skullcrushers",3,"10–12","45s","Hands on a table edge, lower forehead to it."),
+      ], finish:ex("Dips AMRAP",1,"60s max","—","As many chair dips as possible in a minute.")},
+  },
+  abs:{
+    gym:{warmup:["1 min light cardio","Cat-cow ×10","Dead bug ×10"],
+      main:[
+        ex("Hanging Leg Raise",4,"12–15","45s","Hang from a bar, raise legs with control."),
+        ex("Cable Crunch",3,"15","45s","Kneel, crunch down, round the spine."),
+        ex("Weighted Plank",3,"45s","45s","Plate on your back, keep hips level."),
+        ex("Russian Twist (plate)",3,"20 twists","45s","Feet up, rotate side to side."),
+      ], finish:ex("Bicycle Crunch",1,"60s","—","Elbow to opposite knee, steady rhythm.")},
+    db:{warmup:["1 min light cardio","Cat-cow ×10","Dead bug ×10"],
+      main:[
+        ex("Weighted Russian Twist",4,"20 twists","45s","Hold a dumbbell, rotate fully each side."),
+        ex("Dumbbell Crunch",3,"15","45s","Hold weight on chest, curl up."),
+        ex("Weighted Leg Raise",3,"12","45s","Light dumbbell between feet, lower slowly."),
+        ex("Side Plank",3,"30s /side","45s","Stack hips, hold a straight line."),
+      ], finish:ex("Plank Hold",1,"Max hold","—","Brace hard, breathe, hold to failure.")},
+    bw:{warmup:["Jumping jacks 60s","Cat-cow ×10","Dead bug ×10"],
+      main:[
+        ex("Crunches",4,"20–25","30s","Curl up, don't yank on your neck."),
+        ex("Leg Raises",3,"15","30s","Lower slowly, keep lower back pressed down."),
+        ex("Plank",3,"45s","45s","Straight line head to heels, brace core."),
+        ex("Bicycle Crunches",3,"20 /side","30s","Elbow to opposite knee, controlled."),
+        ex("Mountain Climbers",3,"30s","30s","Fast knees, hips low and stable."),
+      ], finish:ex("Russian Twists",1,"60s","—","Feet up if you can, rotate side to side.")},
+  },
+};
+
+/* ---------------- HOW-TO DIAGRAMS ----------------
+   Small SVG helpers compose consistent stick-figure poses.
+   DIAG = movement templates (3 steps each); diagramKey() maps
+   an exercise name onto the closest template.
+--------------------------------------------------- */
+const SV=(i)=>`<svg viewBox="0 0 100 100">${i}</svg>`;
+const F =(x1,y1,x2,y2)=>`<line class="fig" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+const BN=(x1,y1,x2,y2)=>`<line class="bench" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+const PL=(p)=>`<polyline class="fig" points="${p}"/>`;
+const H =(x,y,r=7)=>`<circle class="head" cx="${x}" cy="${y}" r="${r}"/>`;
+const DB=(x,y)=>`<rect class="weight" x="${x-7}" y="${y-3.5}" width="14" height="7" rx="2"/>`;
+const BAR=(x,y,h=15)=>`<line class="barbar" x1="${x-h}" y1="${y}" x2="${x+h}" y2="${y}"/><rect class="weight" x="${x-h-3}" y="${y-6}" width="4" height="12" rx="1.5"/><rect class="weight" x="${x+h-1}" y="${y-6}" width="4" height="12" rx="1.5"/>`;
+const GR=(y=88)=>`<line class="ground" x1="6" y1="${y}" x2="94" y2="${y}"/>`;
+const AU=(x,yb,yt)=>`<line class="arrow" x1="${x}" y1="${yb}" x2="${x}" y2="${yt}"/><polygon class="arrowhead" points="${x},${yt-6} ${x-5},${yt+3} ${x+5},${yt+3}"/>`;
+const AD=(x,yt,yb)=>`<line class="arrow" x1="${x}" y1="${yt}" x2="${x}" y2="${yb}"/><polygon class="arrowhead" points="${x},${yb+6} ${x-5},${yb-3} ${x+5},${yb-3}"/>`;
+const AR=(xl,y,xr)=>`<line class="arrow" x1="${xl}" y1="${y}" x2="${xr}" y2="${y}"/><polygon class="arrowhead" points="${xr+6},${y} ${xr-3},${y-5} ${xr-3},${y+5}"/>`;
+const AL=(xr,y,xl)=>`<line class="arrow" x1="${xr}" y1="${y}" x2="${xl}" y2="${y}"/><polygon class="arrowhead" points="${xl-6},${y} ${xl+3},${y-5} ${xl+3},${y+5}"/>`;
+const STAND=(x)=>H(x,16)+F(x,23,x,52)+F(x,52,x-9,86)+F(x,52,x+9,86); // head+torso+legs (shoulder ~ x,30)
+const T=(caps,a,b,c)=>({caps,s:[SV(a),SV(b),SV(c)]});
+
+const DIAG = {
+  pushup:T(["Plank: arms straight, body in one line","Lower until your chest nearly touches the floor","Press back up to the top. Repeat."],
+    GR()+H(18,40)+PL("25,43 74,55 90,77")+F(30,47,30,75),
+    GR()+H(18,56)+PL("25,58 74,67 90,78")+PL("30,60 27,72 37,76"),
+    GR()+H(18,40)+PL("25,43 74,55 90,77")+F(30,47,30,75)+AU(52,42,20)),
+  pikepushup:T(["Hips high, hands down, head between your arms","Bend elbows, lower the top of your head","Press back up. Targets the shoulders."],
+    GR()+PL("22,84 50,42 80,84")+H(30,62),
+    GR()+PL("22,84 48,52 80,84")+H(29,72),
+    GR()+PL("22,84 50,42 80,84")+H(30,62)+AU(44,74,58)),
+  dip:T(["Support on bars/bench, arms straight","Bend your elbows, lower to about 90°","Press back up to lockout."],
+    BN(38,54,58,54)+H(52,22)+F(52,29,52,50)+F(52,33,44,52)+PL("52,50 58,74 52,86"),
+    BN(38,54,58,54)+H(52,34)+F(52,41,52,58)+PL("52,44 42,54 48,60")+PL("52,58 60,78 54,88"),
+    BN(38,54,58,54)+H(52,22)+F(52,29,52,50)+F(52,33,44,52)+PL("52,50 58,74 52,86")+AU(70,52,30)),
+  pullover:T(["Lie back, weight stretched behind your head","Pull it over in an arc above your chest","Lower slowly — feel the lats stretch."],
+    BN(20,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(26,54,12,48)+DB(12,48),
+    BN(20,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(26,54,32,40)+DB(32,38)+AU(22,52,40),
+    BN(20,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(26,54,12,48)+DB(12,48)),
+  pulldown:T(["Hang with your arms fully extended","Pull up until your chin clears the bar","Lower slowly under control."],
+    BN(30,14,70,14)+H(50,32)+F(50,39,50,66)+F(46,36,42,16)+F(54,36,58,16)+F(50,66,46,86)+F(50,66,54,86),
+    BN(30,14,70,14)+H(50,24)+F(50,31,50,58)+PL("46,28 43,16")+PL("54,28 57,16")+F(50,58,46,80)+F(50,58,54,80)+AU(74,40,20),
+    BN(30,14,70,14)+H(50,32)+F(50,39,50,66)+F(46,36,42,16)+F(54,36,58,16)+F(50,66,46,86)+F(50,66,54,86)+AD(74,20,40)),
+  reardelt:T(["Hinge forward, arms hanging down","Raise out and back, squeeze the shoulder blades","Lower slowly. Rear delts & upper back."],
+    GR()+H(28,42)+PL("32,44 58,52")+F(58,52,58,86)+F(40,47,40,63)+DB(40,63),
+    GR()+H(28,42)+PL("32,44 58,52")+F(58,52,58,86)+F(40,47,50,40)+DB(52,38)+AU(46,60,42),
+    GR()+H(28,42)+PL("32,44 58,52")+F(58,52,58,86)+F(40,47,40,63)+DB(40,63)),
+  row:T(["Hinge at the hips, back flat, weight hanging","Pull the weight up to your lower ribs","Lower under control. Repeat."],
+    GR()+H(26,42)+PL("30,44 58,50")+F(58,50,58,86)+F(40,46,40,66)+DB(40,66),
+    GR()+H(26,42)+PL("30,44 58,50")+F(58,50,58,86)+PL("40,46 44,54")+DB(44,55)+AU(56,66,48),
+    GR()+H(26,42)+PL("30,44 58,50")+F(58,50,58,86)+F(40,46,40,66)+DB(40,66)),
+  lateralraise:T(["Stand tall, dumbbells at your sides","Raise out to the sides to shoulder height","Lower slowly — no swinging."],
+    STAND(48)+F(48,31,40,52)+F(48,31,56,52)+DB(40,52)+DB(56,52),
+    STAND(48)+F(48,31,32,34)+F(48,31,64,34)+DB(30,33)+DB(66,33)+AU(24,50,34)+AU(72,50,34),
+    STAND(48)+F(48,31,40,52)+F(48,31,56,52)+DB(40,52)+DB(56,52)),
+  frontraise:T(["Dumbbells in front of your thighs","Raise straight out in front to eye level","Lower with control."],
+    STAND(48)+F(48,31,44,54)+DB(44,55),
+    STAND(48)+F(48,31,32,36)+DB(30,35)+AU(28,52,36),
+    STAND(48)+F(48,31,44,54)+DB(44,55)),
+  ohp:T(["Weights at shoulder height","Press straight overhead to lockout","Lower back to your shoulders."],
+    STAND(48)+F(48,31,38,37)+F(48,31,58,37)+DB(36,36)+DB(60,36),
+    STAND(48)+F(48,31,42,18)+F(48,31,54,18)+DB(41,15)+DB(55,15)+AU(72,34,16),
+    STAND(48)+F(48,31,38,37)+F(48,31,58,37)+DB(36,36)+DB(60,36)),
+  skullcrusher:T(["Lie back, arms extended straight up","Bend elbows, lower toward your forehead","Extend to lockout. Elbows stay fixed."],
+    BN(22,58,64,58)+H(22,50)+F(28,52,58,54)+PL("58,54 64,72 58,84")+F(32,50,36,34)+F(36,34,44,34)+DB(45,34),
+    BN(22,58,64,58)+H(22,50)+F(28,52,58,54)+PL("58,54 64,72 58,84")+F(32,50,36,34)+F(36,34,30,42)+DB(28,44),
+    BN(22,58,64,58)+H(22,50)+F(28,52,58,54)+PL("58,54 64,72 58,84")+F(32,50,36,34)+F(36,34,44,34)+DB(45,34)+AU(50,46,32)),
+  overheadext:T(["Elbows up, weight behind your head","Extend your arms straight overhead","Lower behind the head — big stretch."],
+    STAND(48)+F(48,31,49,17)+F(48,31,47,17)+F(49,17,56,29)+DB(57,30),
+    STAND(48)+F(48,31,49,17)+F(49,17,52,8)+DB(52,6)+AU(64,28,10),
+    STAND(48)+F(48,31,49,17)+F(48,31,47,17)+F(49,17,56,29)+DB(57,30)),
+  kickback:T(["Hinge over, upper arm parallel to your body","Extend the forearm straight back, squeeze","Return with control. Keep the elbow still."],
+    GR()+H(28,42)+PL("32,44 58,50")+F(58,50,58,86)+F(44,47,52,50)+F(52,50,52,63)+DB(52,64),
+    GR()+H(28,42)+PL("32,44 58,50")+F(58,50,58,86)+F(44,47,52,50)+F(52,50,64,52)+DB(66,52)+AR(58,52,68),
+    GR()+H(28,42)+PL("32,44 58,50")+F(58,50,58,86)+F(44,47,52,50)+F(52,50,52,63)+DB(52,64)),
+  pushdown:T(["Elbows tucked, forearms up at the bar","Push down until your arms lock out","Return to 90°. Elbows stay pinned."],
+    BN(38,32,58,32)+STAND(48)+F(48,42,47,33),
+    BN(38,58,58,58)+STAND(48)+F(48,42,48,58)+AD(64,42,58),
+    BN(38,32,58,32)+STAND(48)+F(48,42,47,33)),
+  hammercurl:T(["Neutral grip, arm extended down","Curl up with a neutral (thumbs-up) grip","Squeeze, then lower under control."],
+    STAND(48)+F(48,30,45,49)+F(45,49,51,60)+DB(51,61),
+    STAND(48)+F(48,30,45,49)+F(45,49,56,46)+DB(57,45),
+    STAND(48)+F(48,30,45,49)+F(45,49,50,35)+DB(50,33)+AU(62,50,34)),
+  curl:T(["Arm extended, weight at your side","Curl up, keep your elbow pinned","Squeeze at the top, then lower slowly."],
+    STAND(48)+F(48,30,45,49)+F(45,49,51,60)+DB(51,61),
+    STAND(48)+F(48,30,45,49)+F(45,49,56,46)+DB(57,45),
+    STAND(48)+F(48,30,45,49)+F(45,49,50,35)+DB(50,33)+AU(62,50,34)),
+  benchpress:T(["Lie on the bench, bar at chest level","Press the bar straight up over your chest","Lower under control to the chest. Repeat."],
+    GR(90)+BN(22,62,64,62)+H(20,56)+F(26,58,58,60)+PL("58,60 66,74 60,88")+F(30,56,40,50)+BAR(40,49,12),
+    GR(90)+BN(22,62,64,62)+H(20,56)+F(26,58,58,60)+PL("58,60 66,74 60,88")+F(30,56,44,36)+BAR(44,35,12)+AU(62,50,34),
+    GR(90)+BN(22,62,64,62)+H(20,56)+F(26,58,58,60)+PL("58,60 66,74 60,88")+F(30,56,40,50)+BAR(40,49,12)),
+  inclinepress:T(["Reclined on an incline, weights at chest","Press up and slightly together","Lower to the upper chest. Repeat."],
+    BN(24,84,52,54)+H(54,50)+F(50,54,28,80)+F(46,56,42,44)+DB(42,42),
+    BN(24,84,52,54)+H(54,50)+F(50,54,28,80)+F(46,56,50,34)+DB(50,32)+AU(64,50,32),
+    BN(24,84,52,54)+H(54,50)+F(50,54,28,80)+F(46,56,42,44)+DB(42,42)),
+  fly:T(["Arms open wide, slight bend in the elbows","Bring arms together above your chest","Open slowly to feel the stretch."],
+    BN(22,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(30,55,20,48)+DB(16,46),
+    BN(22,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(30,55,34,40)+DB(34,38)+AU(20,52,42),
+    BN(22,60,64,60)+H(20,54)+F(26,56,58,58)+PL("58,58 64,74 58,86")+F(30,55,20,48)+DB(16,46)),
+  squat:T(["Stand tall, feet shoulder-width","Sit back and down until thighs are parallel","Drive through your heels back up."],
+    STAND(48)+F(48,30,58,40)+F(48,30,58,46),
+    H(48,34)+F(48,41,48,60)+PL("48,60 36,64 40,86")+PL("48,60 60,64 56,86")+F(48,46,60,52),
+    STAND(48)+F(48,30,58,40)+F(48,30,58,46)+AU(72,60,34)),
+  lunge:T(["Stand tall.","Step back, lower until both knees ~90°","Drive up through your front heel."],
+    STAND(48)+F(48,30,44,50)+F(48,30,52,50),
+    H(48,24)+F(48,31,48,54)+PL("48,54 44,70 44,86")+PL("48,54 64,72 72,86"),
+    STAND(48)+F(48,30,44,50)+F(48,30,52,50)+AU(72,60,36)),
+  stepup:T(["Plant one foot on the box","Drive up until your leg is straight","Step down with control. Alternate legs."],
+    GR()+BN(56,70,82,70)+BN(56,70,56,86)+H(38,26)+F(38,33,38,58)+F(38,58,34,86)+F(38,58,60,70),
+    GR()+BN(56,70,82,70)+BN(56,70,56,86)+H(68,30)+F(68,37,68,62)+F(68,62,66,70)+F(68,62,72,70)+AU(46,64,40),
+    GR()+BN(56,70,82,70)+BN(56,70,56,86)+H(38,26)+F(38,33,38,58)+F(38,58,34,86)+F(38,58,60,70)),
+  hinge:T(["Stand tall, weights in front of your thighs","Push your hips back, lower with a flat back","Squeeze your glutes to stand tall."],
+    STAND(48)+F(48,30,46,52)+F(48,30,52,52)+DB(45,53)+DB(53,53),
+    H(28,44)+PL("32,46 54,52")+F(54,52,52,86)+F(40,49,40,66)+DB(40,67),
+    STAND(48)+F(48,30,46,52)+F(48,30,52,52)+DB(45,53)+DB(53,53)+AU(72,52,32)),
+  legpress:T(["Feet on the platform, knees bent","Press until your legs are nearly straight","Lower with control — don't lock hard."],
+    BN(18,72,34,52)+H(24,50)+F(28,54,34,64)+PL("34,64 54,54 52,72")+BN(56,66,56,80),
+    BN(18,72,34,52)+H(24,50)+F(28,54,34,64)+PL("34,64 62,60 62,68")+BN(70,54,70,68)+AR(56,62,68),
+    BN(18,72,34,52)+H(24,50)+F(28,54,34,64)+PL("34,64 54,54 52,72")+BN(56,66,56,80)),
+  legcurl:T(["Lie face down, legs straight","Curl your heels toward your glutes","Lower slowly. Squeeze the hamstrings."],
+    BN(22,68,64,68)+H(18,62)+F(24,64,66,66)+F(66,66,86,68),
+    BN(22,68,64,68)+H(18,62)+F(24,64,66,66)+F(66,66,80,50)+AU(84,66,50),
+    BN(22,68,64,68)+H(18,62)+F(24,64,66,66)+F(66,66,86,68)),
+  calfraise:T(["Stand tall, feet flat","Rise onto your toes as high as you can","Lower for a full stretch at the bottom."],
+    GR()+STAND(48),
+    GR()+H(48,12)+F(48,19,48,48)+F(48,48,42,80)+F(48,48,54,80)+AU(72,60,38),
+    GR()+STAND(48)),
+  glutebridge:T(["On your back, knees bent, feet flat","Drive your hips up, squeeze your glutes","Pause at the top, then lower."],
+    GR()+H(18,74)+F(24,76,50,76)+PL("50,76 66,62 66,80")+F(24,74,16,72),
+    GR()+H(18,74)+PL("24,76 52,58")+PL("52,58 66,62 66,80")+AU(38,76,60),
+    GR()+H(18,74)+F(24,76,50,76)+PL("50,76 66,62 66,80")+F(24,74,16,72)),
+  wallsit:T(["Back flat against a wall","Slide down to a 90° sitting position","Hold. Thighs parallel to the floor."],
+    BN(24,16,24,88)+H(30,30)+F(30,37,30,66)+F(30,66,28,86)+F(30,66,34,86),
+    BN(24,16,24,88)+H(32,40)+F(32,47,32,64)+F(32,64,52,64)+F(52,64,52,86)+AD(44,48,64),
+    BN(24,16,24,88)+H(32,40)+F(32,47,32,64)+F(32,64,52,64)+F(52,64,52,86)),
+  plank:T(["Forearms down, elbows under your shoulders","Body in one straight line — brace your core","Hold steady. Don't let your hips sag or pike."],
+    GR()+H(20,52)+PL("26,54 70,63 88,79")+F(26,54,26,66)+F(22,66,34,66),
+    GR()+H(20,52)+PL("26,54 70,63 88,79")+F(26,54,26,66)+F(22,66,34,66),
+    GR()+H(20,52)+PL("26,54 70,63 88,79")+F(26,54,26,66)+F(22,66,34,66)),
+  sideplank:T(["On one forearm, body turned to the side","Lift your hips into a straight line","Hold. Keep your hips stacked and high."],
+    GR()+H(22,54)+PL("28,57 80,76")+F(28,57,28,76)+F(24,76,34,76),
+    GR()+H(22,50)+PL("28,53 80,72")+F(28,53,28,72)+F(24,72,34,72)+AU(52,78,66),
+    GR()+H(22,50)+PL("28,53 80,72")+F(28,53,28,72)+F(24,72,34,72)),
+  crunch:T(["Lie back, knees bent, hands by your head","Curl your shoulders up toward your knees","Lower with control — don't pull your neck."],
+    GR()+H(24,66)+F(30,68,50,70)+PL("50,70 64,58 64,80"),
+    GR()+H(30,56)+PL("34,58 50,70")+PL("50,70 64,58 64,80")+AU(40,70,54),
+    GR()+H(24,66)+F(30,68,50,70)+PL("50,70 64,58 64,80")),
+  legraise:T(["Lie flat, legs extended","Raise your legs up, keeping them straight","Lower slowly — don't touch the floor."],
+    GR()+H(20,66)+F(26,68,54,68)+F(54,68,84,72),
+    GR()+H(20,66)+F(26,68,54,68)+F(54,68,62,44)+AU(76,66,44),
+    GR()+H(20,66)+F(26,68,54,68)+F(54,68,84,72)),
+  russiantwist:T(["Sit back, feet up, weight at your center","Rotate to one side…","…then the other. That's one rep."],
+    GR(90)+H(32,50)+F(34,53,42,74)+F(42,74,60,60)+F(38,60,47,64)+DB(48,64),
+    GR(90)+H(32,50)+F(34,53,42,74)+F(42,74,60,60)+F(38,60,30,58)+DB(26,58)+AL(44,60,28),
+    GR(90)+H(32,50)+F(34,53,42,74)+F(42,74,60,60)+F(42,60,54,58)+DB(58,58)+AR(46,60,60)),
+  bicycle:T(["On your back, hands by your head","Bring one elbow to the opposite knee","Switch sides in a pedaling motion."],
+    GR()+H(20,64)+F(26,66,50,66)+F(50,66,60,52)+F(50,66,64,66),
+    GR()+H(24,60)+PL("28,62 50,66")+F(50,66,44,54)+F(50,66,68,64),
+    GR()+H(24,60)+PL("28,62 50,66")+F(50,66,58,54)+F(50,66,40,66)),
+  mountainclimber:T(["Start in a high plank","Drive one knee toward your chest","Switch legs quickly, hips low."],
+    GR()+H(18,52)+PL("24,54 70,64 88,80")+F(24,54,26,80),
+    GR()+H(18,54)+PL("24,56 64,64")+F(24,56,26,82)+F(64,64,54,66)+F(64,64,72,82),
+    GR()+H(18,52)+PL("24,54 70,64 88,80")+F(24,54,26,80)+AR(44,58,58)),
+  superman:T(["Lie face down, arms extended forward","Lift arms, chest and legs off the floor","Squeeze your lower back & glutes. Hold."],
+    GR()+H(16,66)+F(22,68,70,70)+F(70,70,86,72)+F(22,66,8,64),
+    GR()+H(18,58)+PL("24,60 68,62")+F(68,62,86,54)+F(24,58,10,50)+AU(44,68,54),
+    GR()+H(16,66)+F(22,68,70,70)+F(70,70,86,72)+F(22,66,8,64)),
+  birddog:T(["On hands and knees, back flat","Extend opposite arm and leg straight out","Return, then switch sides. Stay stable."],
+    GR(72)+H(22,50)+F(28,52,60,52)+F(28,52,28,72)+F(60,52,60,72),
+    GR(72)+H(22,50)+F(28,52,60,52)+F(60,52,60,72)+F(28,52,12,46)+F(60,52,78,50),
+    GR(72)+H(22,50)+F(28,52,60,52)+F(28,52,28,72)+F(60,52,60,72)),
+};
+
+const DIAG_RULES=[
+  [/pike|wall walk/,'pikepushup'],
+  [/push-?up|push up/,'pushup'],
+  [/pushdown/,'pushdown'],
+  [/\bdip/,'dip'],
+  [/pullover/,'pullover'],
+  [/pulldown|pull-?up|chin/,'pulldown'],
+  [/face pull|rear delt|reverse fly|snow angel/,'reardelt'],
+  [/lateral raise/,'lateralraise'],
+  [/front raise/,'frontraise'],
+  [/skullcrusher/,'skullcrusher'],
+  [/overhead.*extension|extension.*overhead/,'overheadext'],
+  [/kickback/,'kickback'],
+  [/arnold|shoulder press|overhead press|overhead barbell press/,'ohp'],
+  [/leg curl/,'legcurl'],
+  [/hammer/,'hammercurl'],
+  [/21s|curl/,'curl'],
+  [/incline.*press/,'inclinepress'],
+  [/bench press|floor press|close-grip.*press|close-grip bench/,'benchpress'],
+  [/\bfly/,'fly'],
+  [/renegade|\brow/,'row'],
+  [/leg press/,'legpress'],
+  [/wall sit/,'wallsit'],
+  [/bulgarian|split squat/,'lunge'],
+  [/squat/,'squat'],
+  [/lunge/,'lunge'],
+  [/step-?up/,'stepup'],
+  [/romanian|deadlift|\brdl/,'hinge'],
+  [/calf/,'calfraise'],
+  [/glute bridge|bridge/,'glutebridge'],
+  [/side plank/,'sideplank'],
+  [/plank/,'plank'],
+  [/bicycle/,'bicycle'],
+  [/crunch/,'crunch'],
+  [/leg raise/,'legraise'],
+  [/russian twist/,'russiantwist'],
+  [/mountain climber/,'mountainclimber'],
+  [/superman/,'superman'],
+  [/bird dog/,'birddog'],
+];
+function diagramKey(name){
+  const n = name.toLowerCase();
+  for(const [re,key] of DIAG_RULES){ if(re.test(n)) return key; }
+  return null;
+}
+function stepsHTML(name){
+  const key = diagramKey(name);
+  const d = key && DIAG[key];
+  if(!d) return "";
+  return `<div class="steps">` + d.s.map((svg,i)=>
+    `<div class="step"><span class="n">${i+1}</span>${svg}<div class="cap">${d.caps[i]}</div></div>`
+  ).join("") + `</div>`;
+}
+
+/* ---------------- NAVIGATION ---------------- */
+const state = {equip:null, muscle:null, view:"gymQ"};
+const screen = document.getElementById("screen");
+const topbar = document.getElementById("topbar");
+const crumb = document.getElementById("crumb");
+const backBtn = document.getElementById("backBtn");
+
+backBtn.onclick = ()=>{
+  if(state.view==="workout"){ render("muscles"); }
+  else if(state.view==="muscles"){ render("dbQ"); }
+  else if(state.view==="dbQ"){ render("gymQ"); }
+};
+
+function setTop(show, text){
+  topbar.style.visibility = show ? "visible" : "hidden";
+  crumb.innerHTML = text || "";
+}
+
+function render(view){
+  state.view = view;
+  window.scrollTo(0,0);
+  if(view==="gymQ") return renderGymQ();
+  if(view==="dbQ") return renderDbQ();
+  if(view==="muscles") return renderMuscles();
+  if(view==="workout") return renderWorkout();
+}
+
+function renderGymQ(){
+  setTop(false);
+  screen.innerHTML = `
+    <h1>30·Min</h1>
+    <p class="sub">Quick, focused workouts by muscle group.</p>
+    <div class="q">Are we at the gym today? 🏋️</div>
+    <div class="q-sub">This decides what equipment your workout uses.</div>
+    <div class="choices">
+      <button class="choice yes" onclick="pickGym(true)">
+        <span class="ic">✅</span>
+        <span><span class="lbl">Yes, full gym</span><span class="d">Barbells, machines, cables, benches</span></span>
+      </button>
+      <button class="choice no" onclick="pickGym(false)">
+        <span class="ic">🏠</span>
+        <span><span class="lbl">No</span><span class="d">Training at home / on the go</span></span>
+      </button>
+    </div>`;
+}
+function pickGym(isGym){
+  if(isGym){ state.equip="gym"; render("muscles"); }
+  else { render("dbQ"); }
+}
+
+function renderDbQ(){
+  setTop(true, `<b>Not at the gym</b>`);
+  screen.innerHTML = `
+    <div class="q">Do you have dumbbells? 🏋️‍♂️</div>
+    <div class="q-sub">Even one pair unlocks a lot more.</div>
+    <div class="choices">
+      <button class="choice yes" onclick="pickDb(true)">
+        <span class="ic">✅</span>
+        <span><span class="lbl">Yes, I have dumbbells</span><span class="d">Dumbbells + bodyweight movements</span></span>
+      </button>
+      <button class="choice no" onclick="pickDb(false)">
+        <span class="ic">🙅</span>
+        <span><span class="lbl">No equipment</span><span class="d">Pure bodyweight — works anywhere</span></span>
+      </button>
+    </div>`;
+}
+function pickDb(hasDb){ state.equip = hasDb ? "db" : "bw"; render("muscles"); }
+
+function renderMuscles(){
+  setTop(true, `Equipment: <b>${EQUIP_LABEL[state.equip]}</b> · <span style="color:var(--accent)">change</span>`);
+  crumb.style.cursor="pointer";
+  crumb.onclick = ()=>render("gymQ");
+  const order = ["chest","back","legs","shoulders","biceps","triceps","abs"];
+  let tiles = order.map(k=>{
+    const m = MG[k];
+    return `<button class="tile ${k==='abs'?'abs':''}" onclick="pickMuscle('${k}')">
+      <span class="emoji">${m.emoji}</span><span class="name">${m.name}</span></button>`;
+  }).join("");
+  screen.innerHTML = `
+    <h2>Pick a muscle group</h2>
+    <p class="sub">Each is a ~30-minute session.</p>
+    <div class="grid">${tiles}</div>
+    <div class="hint">💡 Tip: warm up properly, leave 1–2 reps in the tank on early sets, and push the finisher.</div>`;
+}
+function pickMuscle(k){ state.muscle=k; render("workout"); }
+
+function renderWorkout(){
+  const m = MG[state.muscle];
+  const w = WORKOUTS[state.muscle][state.equip];
+  setTop(true, `<b>${m.name}</b> · ${EQUIP_LABEL[state.equip]}`);
+  crumb.style.cursor="default"; crumb.onclick=null;
+
+  const warm = w.warmup.map(x=>`<li>${x}</li>`).join("");
+  const main = w.main.map((e,i)=>exCard(e,i+1)).join("");
+  const fin = finCard(w.finish);
+
+  screen.innerHTML = `
+    <span class="pill"><span class="dot"></span> ~30 min · ${m.emoji} ${m.name}</span>
+    <h2>${m.name} Workout</h2>
+    <p class="sub">${EQUIP_LABEL[state.equip]} · ${w.main.length} main lifts + finisher</p>
+
+    <div class="block-title">🔥 Warm-up · ~4 min</div>
+    <div class="ex"><ul style="margin:0; padding-left:18px; line-height:1.9; font-size:15px;">${warm}</ul></div>
+
+    <div class="block-title main">🏋️ Main Sets · ~22 min</div>
+    ${main}
+
+    <div class="block-title finish">⚡ Finisher · ~2 min</div>
+    ${fin}
+
+    <div class="hint">Rest timers are suggestions — tap “Rest” to run one. Adjust weight so the last 1–2 reps are tough but clean.</div>`;
+}
+
+function exCard(e,n){
+  return `<div class="ex">
+    <div class="ex-head"><span class="ex-name">${e.name}</span><span class="ex-num">${n}</span></div>
+    <div class="ex-meta">
+      <span class="tag s">${e.sets} sets</span>
+      <span class="tag r">${e.reps}</span>
+      <span class="tag rest">Rest ${e.rest}</span>
+    </div>
+    ${e.note?`<div class="ex-note">${e.note}</div>`:""}
+    ${stepsHTML(e.name)}
+    ${restSeconds(e.rest)?`<button class="rest-btn" onclick="openTimer(${restSeconds(e.rest)})">⏱️ Start ${restSeconds(e.rest)}s rest timer</button>`:""}
+  </div>`;
+}
+function finCard(e){
+  return `<div class="ex" style="border-color:rgba(255,180,84,.4)">
+    <div class="ex-head"><span class="ex-name">${e.name}</span><span class="ex-num">🏁</span></div>
+    <div class="ex-meta"><span class="tag s">${e.sets} set</span><span class="tag r" style="color:var(--warn)">${e.reps}</span></div>
+    ${e.note?`<div class="ex-note">${e.note}</div>`:""}
+    ${stepsHTML(e.name)}
+  </div>`;
+}
+function restSeconds(rest){
+  const m = String(rest).match(/(\d+)\s*s/); if(m) return parseInt(m[1]);
+  const min = String(rest).match(/(\d+)\s*min/); if(min) return parseInt(min[1])*60;
+  return 0;
+}
+
+/* ---------------- REST TIMER ---------------- */
+let tTotal=60, tLeft=60, tInt=null, tPaused=false;
+const CIRC=653.5;
+const timerEl=document.getElementById("timer");
+const tVal=document.getElementById("tVal");
+const ringFill=document.getElementById("ringFill");
+const pauseBtn=document.getElementById("pauseBtn");
+
+function openTimer(sec){
+  tTotal=sec; tLeft=sec; tPaused=false;
+  pauseBtn.textContent="Pause";
+  timerEl.classList.add("show");
+  drawTimer();
+  clearInterval(tInt);
+  tInt=setInterval(tick,1000);
+}
+function tick(){
+  if(tPaused) return;
+  tLeft--;
+  if(tLeft<=0){ tLeft=0; drawTimer(); done(); return; }
+  drawTimer();
+}
+function drawTimer(){
+  tVal.textContent=tLeft;
+  const frac = tTotal? tLeft/tTotal : 0;
+  ringFill.style.strokeDashoffset = CIRC*(1-frac);
+  ringFill.setAttribute("stroke", tLeft<=5 ? "#ff5d6c" : "#37d6a3");
+}
+function adjust(d){ tLeft=Math.max(0,tLeft+d); tTotal=Math.max(tTotal,tLeft); drawTimer(); }
+function togglePause(){ tPaused=!tPaused; pauseBtn.textContent=tPaused?"Resume":"Pause"; }
+function closeTimer(){ clearInterval(tInt); timerEl.classList.remove("show"); }
+function done(){
+  clearInterval(tInt);
+  tVal.textContent="Go!";
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination); o.frequency.value=880; o.type="sine";
+    g.gain.setValueAtTime(0.001,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+    o.start(); o.stop(ctx.currentTime+0.5);
+  }catch(e){}
+  setTimeout(closeTimer,900);
+}
+
+/* ---------------- INIT ---------------- */
+render("gymQ");
+</script>
+</body>
+</html>
