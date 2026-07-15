@@ -570,7 +570,30 @@ function diagramKey(name){
   for(const [re,key] of DIAG_RULES){ if(re.test(n)) return key; }
   return null;
 }
+const GIF_MAP = {
+  "Arnold Press": "arnoldpress.gif",
+  "Barbell Back Squat": "barbellbacksquat.gif",
+  "Barbell Bench Press": "barbellbenchpress.gif",
+  "Cable Crunch": "cablecrunch.gif",
+  "Cable Fly (mid)": "cableflymid.gif",
+  "Cable/Rear Delt Fly": "cablereardeltfly.gif",
+  "Chest Dips": "chestdips.gif",
+  "Close-Grip Bench Press": "closegripbarbellpress.gif",
+  "Face Pull": "facepull.gif",
+  "Hanging Leg Raise": "hanginglegraises.gif",
+  "Lat Pulldown": "latpulldown.gif",
+  "Overhead Cable/DB Extension": "overheadcabledbextension.gif",
+  "Romanian Deadlift": "romaniandeadlift.gif",
+  "Seated Cable Row": "seatedcablerow.gif",
+  "Leg Press": "seatedlegpress.gif",
+};
+
 function stepsHTML(name){
+  // Check for GIF first
+  if(GIF_MAP[name]){
+    return `<div style="margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--line);"><img src="gifs/${GIF_MAP[name]}" style="width:100%; display:block; background:var(--card2);"/></div>`;
+  }
+  // Fall back to diagram
   const key = diagramKey(name);
   const d = key && DIAG[key];
   if(!d) return "";
