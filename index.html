@@ -51,7 +51,7 @@
   .choice:active{transform:scale(.98);}
   .choice .ic{font-size:30px; width:40px; text-align:center;}
   .choice .lbl{font-size:19px; font-weight:600;}
-  .choice .d{font-size:13px; color:var(--muted); margin-top:3px;}
+  .choice .d{font-size:13px; color:var(--muted); margin-top:8px; display:block;}
   .choice.yes{border-color:rgba(55,214,163,.5);}
   .choice.no{border-color:var(--line);}
 
@@ -579,8 +579,62 @@ function stepsHTML(name){
   ).join("") + `</div>`;
 }
 
+/* ---------------- EXERCISE SWAPS ----------------
+   Map gym exercises → dumbbell equivalents for mid-workout swaps.
+   User can swap any exercise to its DB version if not already there.
+------------------------------------------------- */
+const SWAP_MAP = {
+  // Chest
+  "Barbell Bench Press": "Dumbbell Bench/Floor Press",
+  "Cable Fly (mid)": "Dumbbell Fly",
+  "Chest Dips": "Close-Grip Dumbbell Press",
+  // Back
+  "Barbell Row": "One-Arm Dumbbell Row",
+  "Seated Cable Row": "One-Arm Dumbbell Row",
+  "Face Pull": "Reverse Fly",
+  "Straight-Arm Pulldown": "Dumbbell Pullover",
+  // Legs
+  "Barbell Back Squat": "Goblet Squat",
+  "Leg Press": "Dumbbell Reverse Lunge",
+  "Seated/Lying Leg Curl": "Leg Raises",
+  // Shoulders
+  "Overhead Barbell Press": "Dumbbell Shoulder Press",
+  "Cable/Rear Delt Fly": "Bent-Over Rear Delt Fly",
+  // Biceps
+  "Barbell Curl": "Dumbbell Curl",
+  "Cable Curl": "Dumbbell Curl",
+  "21s (Barbell)": "Dumbbell 21s",
+  // Triceps
+  "Close-Grip Bench Press": "Close-Grip Dumbbell Press",
+  "Cable Pushdown": "Dumbbell Kickback",
+  "Overhead Cable/DB Extension": "Overhead Dumbbell Extension",
+  // Abs
+  "Hanging Leg Raise": "Weighted Leg Raise",
+  "Cable Crunch": "Dumbbell Crunch",
+  "Russian Twist (plate)": "Weighted Russian Twist",
+};
+
+function canSwap(exName, currentWorkout){
+  if(!SWAP_MAP[exName]) return null; // no swap available
+  const swapTo = SWAP_MAP[exName];
+  // check if swap target already exists in current workout
+  const allExercises = [
+    ...currentWorkout.warmup,
+    ...currentWorkout.main.map(e=>e.name),
+    currentWorkout.finish.name
+  ];
+  if(allExercises.includes(swapTo)) return "already"; // already in workout
+  return swapTo; // safe to swap
+}
+
+function performSwap(exName, muscleGroup){
+  state.swaps = state.swaps || {};
+  state.swaps[exName] = SWAP_MAP[exName];
+  render("workout");
+}
+
 /* ---------------- NAVIGATION ---------------- */
-const state = {equip:null, muscle:null, view:"gymQ"};
+const state = {equip:null, muscle:null, view:"gymQ", swaps:{}};
 const screen = document.getElementById("screen");
 const topbar = document.getElementById("topbar");
 const crumb = document.getElementById("crumb");
@@ -588,7 +642,7 @@ const backBtn = document.getElementById("backBtn");
 
 backBtn.onclick = ()=>{
   if(state.view==="workout"){ render("muscles"); }
-  else if(state.view==="muscles"){ render("dbQ"); }
+  else if(state.view==="muscles"){ render(state.equip==="gym" ? "gymQ" : "dbQ"); }
   else if(state.view==="dbQ"){ render("gymQ"); }
 };
 
@@ -648,6 +702,7 @@ function renderDbQ(){
 function pickDb(hasDb){ state.equip = hasDb ? "db" : "bw"; render("muscles"); }
 
 function renderMuscles(){
+  state.swaps = {};
   setTop(true, `Equipment: <b>${EQUIP_LABEL[state.equip]}</b> · <span style="color:var(--accent)">change</span>`);
   crumb.style.cursor="pointer";
   crumb.onclick = ()=>render("gymQ");
@@ -663,12 +718,12 @@ function renderMuscles(){
     <div class="grid">${tiles}</div>
     <div class="hint">💡 Tip: warm up properly, leave 1–2 reps in the tank on early sets, and push the finisher.</div>`;
 }
-function pickMuscle(k){ state.muscle=k; render("workout"); }
+function pickMuscle(k){ state.muscle=k; state.swaps={}; render("workout"); }
 
 function swapEquip(){
   const nextEquip = {gym:'db', db:'bw', bw:null};
   const next = nextEquip[state.equip];
-  if(next){ state.equip = next; render("workout"); }
+  if(next){ state.equip = next; state.swaps = {}; render("workout"); }
 }
 
 function renderWorkout(){
@@ -678,8 +733,8 @@ function renderWorkout(){
   crumb.style.cursor="default"; crumb.onclick=null;
 
   const warm = w.warmup.map(x=>`<li>${x}</li>`).join("");
-  const main = w.main.map((e,i)=>exCard(e,i+1)).join("");
-  const fin = finCard(w.finish);
+  const main = w.main.map((e,i)=>exCard(e,i+1,w)).join("");
+  const fin = finCard(w.finish, w);
 
   screen.innerHTML = `
     <span class="pill"><span class="dot"></span> ~30 min · ${m.emoji} ${m.name}</span>
@@ -710,25 +765,43 @@ function swapEquipBtn(){
   </div>`;
 }
 
-function exCard(e,n){
+function exCard(e,n,w){
+  const swapped = state.swaps && state.swaps[e.name];
+  const displayName = swapped || e.name;
+  const swapStatus = !swapped && SWAP_MAP[e.name] ? canSwap(e.name, w) : null;
+  const swapBtn = !swapped && swapStatus && swapStatus !== "already" ?
+    `<button class="rest-btn" style="background:var(--card2); color:var(--accent2);" onclick="performSwap('${e.name.replace(/'/g,"\\'")}')">⚙️ Swap for ${SWAP_MAP[e.name]}</button>` :
+    (swapStatus === "already" ? `<div style="font-size:12px; color:var(--muted); margin-top:8px;">💡 ${SWAP_MAP[e.name]} already in this workout</div>` : "");
+
   return `<div class="ex">
-    <div class="ex-head"><span class="ex-name">${e.name}</span><span class="ex-num">${n}</span></div>
+    <div class="ex-head"><span class="ex-name">${displayName}</span><span class="ex-num">${n}</span></div>
     <div class="ex-meta">
       <span class="tag s">${e.sets} sets</span>
       <span class="tag r">${e.reps}</span>
       <span class="tag rest">Rest ${e.rest}</span>
     </div>
+    ${swapped ? `<div style="color:var(--accent2); font-size:12px; margin-bottom:8px; font-weight:600;">✓ Swapped</div>` : ""}
     ${e.note?`<div class="ex-note">${e.note}</div>`:""}
-    ${stepsHTML(e.name)}
+    ${stepsHTML(displayName)}
+    ${swapBtn}
     ${restSeconds(e.rest)?`<button class="rest-btn" onclick="openTimer(${restSeconds(e.rest)})">⏱️ Start ${restSeconds(e.rest)}s rest timer</button>`:""}
   </div>`;
 }
-function finCard(e){
+function finCard(e,w){
+  const swapped = state.swaps && state.swaps[e.name];
+  const displayName = swapped || e.name;
+  const swapStatus = !swapped && SWAP_MAP[e.name] ? canSwap(e.name, w) : null;
+  const swapBtn = !swapped && swapStatus && swapStatus !== "already" ?
+    `<button class="rest-btn" style="background:var(--card2); color:var(--accent2); margin-top:10px;" onclick="performSwap('${e.name.replace(/'/g,"\\'")}')">⚙️ Swap for ${SWAP_MAP[e.name]}</button>` :
+    (swapStatus === "already" ? `<div style="font-size:12px; color:var(--muted); margin-top:10px;">💡 ${SWAP_MAP[e.name]} already in this workout</div>` : "");
+
   return `<div class="ex" style="border-color:rgba(255,180,84,.4)">
-    <div class="ex-head"><span class="ex-name">${e.name}</span><span class="ex-num">🏁</span></div>
+    <div class="ex-head"><span class="ex-name">${displayName}</span><span class="ex-num">🏁</span></div>
     <div class="ex-meta"><span class="tag s">${e.sets} set</span><span class="tag r" style="color:var(--warn)">${e.reps}</span></div>
+    ${swapped ? `<div style="color:var(--accent2); font-size:12px; margin-bottom:8px; font-weight:600;">✓ Swapped</div>` : ""}
     ${e.note?`<div class="ex-note">${e.note}</div>`:""}
-    ${stepsHTML(e.name)}
+    ${stepsHTML(displayName)}
+    ${swapBtn}
   </div>`;
 }
 function restSeconds(rest){
