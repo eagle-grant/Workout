@@ -720,12 +720,6 @@ function renderMuscles(){
 }
 function pickMuscle(k){ state.muscle=k; state.swaps={}; render("workout"); }
 
-function swapEquip(){
-  const nextEquip = {gym:'db', db:'bw', bw:null};
-  const next = nextEquip[state.equip];
-  if(next){ state.equip = next; state.swaps = {}; render("workout"); }
-}
-
 function renderWorkout(){
   const m = MG[state.muscle];
   const w = WORKOUTS[state.muscle][state.equip];
@@ -750,19 +744,7 @@ function renderWorkout(){
     <div class=”block-title finish”>⚡ Finisher · ~2 min</div>
     ${fin}
 
-    <div class=”hint”>Rest timers are suggestions — tap “Rest” to run one. Adjust weight so the last 1–2 reps are tough but clean.</div>
-    ${swapEquipBtn()}`;
-}
-
-function swapEquipBtn(){
-  const nextEquip = {gym:'db', db:'bw', bw:null};
-  const next = nextEquip[state.equip];
-  if(!next) return `<div style=”text-align:center; margin-top:26px; color:var(--muted); font-size:13px;”>You're already at bodyweight — can't swap lower.</div>`;
-  return `<div style=”text-align:center; margin-top:26px;”>
-    <button style=”background:var(--card); border:1px solid var(--line); color:var(--muted); padding:12px 18px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;” onclick=”swapEquip()”>
-      ⚙️ Equipment not available — use ${EQUIP_LABEL[next]} instead
-    </button>
-  </div>`;
+    <div class=”hint”>Rest timers are suggestions — tap “Rest” to run one. Adjust weight so the last 1–2 reps are tough but clean.</div>`;
 }
 
 function exCard(e,n,w){
